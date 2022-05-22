@@ -15,33 +15,55 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function run(){
     try{
         await client.connect();
-        const mydb = client.db("menufeture").collection('products');
+        const myProductcollection = client.db("menufeture").collection('products');
+        const usercollection = client.db("menufeture").collection('users');
         app.get('/',(req,res)=>{
             res.send("Server is working");
+        })
+        // User 
+        app.post('/user',async(req,res)=>{
+            const data = req.body;
+            console.log(data);
+            const querry = {email:data.email};
+            const option = {upsert:true};
+            const updateDoc={
+                $set: data,
+            };
+            const result = await usercollection.updateOne(querry,updateDoc,option);
+            res.send(result)
         })
         // products 
         app.post('/addproduct',async(req,res)=>{
             const data = req.body;
-            const insertdata = {name:data.productName,price:data.productPrice,quan:data.productQuantity,img:data.productImg,desc:data.productDesc}
+            
+            const insertdata = {name:data.productName,price:Math.parseInt(data.productPrice),quan:Math.parseInt(data.productQuantity),img:data.productImg,desc:data.productDesc}
             console.log(insertdata);
-            const result = await mydb.insertOne(insertdata);
+            const result = await myProductcollection.insertOne(insertdata);
             res.send(result);
         });
         app.get('/products',async(req,res)=>{
             const querry={};
             const lim = parseInt(req.query.limit);
             const page = parseInt(req.query.page)
-            let cursor = mydb.find(querry);
+            let cursor = myProductcollection.find(querry);
             if(lim){
                  if(page){
-                    cursor = mydb.find(querry).skip(lim*page).limit(lim);
+                    cursor = myProductcollection.find(querry).skip(lim*page).limit(lim);
                  }else{
-                    cursor = mydb.find(querry).limit(lim);
+                    cursor = myProductcollection.find(querry).limit(lim);
                  }
                  
             }
             const products = await cursor.toArray();
             res.send(products);
+        })
+         // Get Single Products
+         app.get('/products/:id',async(req,res)=>{
+           
+            const querry={_id: ObjectId(req.params.id)};
+            const result = await myProductcollection.findOne(querry);
+            
+            res.send(result);
         })
 
     }finally{
