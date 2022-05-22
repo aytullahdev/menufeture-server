@@ -27,6 +27,22 @@ async function run(){
             const result = await mydb.insertOne(insertdata);
             res.send(result);
         });
+        app.get('/products',async(req,res)=>{
+            const querry={};
+            const lim = parseInt(req.query.limit);
+            const page = parseInt(req.query.page)
+            let cursor = mydb.find(querry);
+            if(lim){
+                 if(page){
+                    cursor = mydb.find(querry).skip(lim*page).limit(lim);
+                 }else{
+                    cursor = mydb.find(querry).limit(lim);
+                 }
+                 
+            }
+            const products = await cursor.toArray();
+            res.send(products);
+        })
 
     }finally{
 
