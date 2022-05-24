@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 const cors = require("cors");
 require("dotenv").config();
 const app = express();
-
+const stripe = require("stripe")(process.env.PK);
 app.use(cors());
 
 app.use(express.json());
@@ -26,6 +26,23 @@ async function run() {
       const querry = { email: data.email };
     });
     // User
+    app.post("/updateprofile", async (req, res) => {
+      const data = req.body;
+      console.log(data);
+      const querry = { _id: ObjectId(data._id) };
+      const updateDoc = {
+        $set: {
+          name: data.name,
+          location: data.location,
+          linkdin: data.linkdin,
+          phone: data.phone,
+          education: data.education,
+        },
+      };
+      const result = await usercollection.updateOne(querry, updateDoc);
+      console.log(updateDoc);
+      res.send(result);
+    });
     app.post("/login", async (req, res) => {
       const data = req.body;
       const querry = { email: data.email };
@@ -95,6 +112,24 @@ async function run() {
       const result = await myProductcollection.findOne(querry);
 
       res.send(result);
+    });
+    //Payments
+    app.post("/create-payment-intent", async (req, res) => {
+      const order = req.body;
+      const price = order.price;
+      const amount = price * 100;
+      // Create a PaymentIntent with the order amount and currency
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: price,
+        currency: "usd",
+        payment_method_types: [
+          "card"
+        ],
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      })
+
     });
   } finally {
   }
