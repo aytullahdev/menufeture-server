@@ -22,16 +22,17 @@ async function run() {
     const myProductcollection = client.db("menufeture").collection("products");
     const usercollection = client.db("menufeture").collection("users");
     const ordercollection = client.db("menufeture").collection("orders");
+    const reviwscollection = client.db("menufeture").collection("reviews");
     app.get("/", (req, res) => {
       res.send("Server is working");
       const querry = { email: data.email };
     });
     // User
-    app.get('/users',async(req,res)=>{
-       const querry = {};
-       const result = await usercollection.find(querry).toArray();
-       res.send(result)
-    })
+    app.get("/users", async (req, res) => {
+      const querry = {};
+      const result = await usercollection.find(querry).toArray();
+      res.send(result);
+    });
     app.post("/updateprofile", async (req, res) => {
       const data = req.body;
       console.log(data);
@@ -56,7 +57,7 @@ async function run() {
       res.send(result);
     });
     app.post("/user", async (req, res) => {
-      const data = {...req.body,role:'user'};
+      const data = { ...req.body, role: "user" };
       console.log(data);
       const querry = { email: data.email };
       const option = { upsert: true };
@@ -79,36 +80,34 @@ async function run() {
         }
       }
     });
-    app.post('/makeadmin',async(req,res)=>{
-          const data = req.body;
-          console.log(data);
+    app.post("/makeadmin", async (req, res) => {
+      const data = req.body;
+      console.log(data);
       const querry = { email: data.email };
       const updateDoc = {
-        $set: {role:'admin'},
+        $set: { role: "admin" },
       };
       const result = await usercollection.updateOne(querry, updateDoc);
       res.send(result);
+    });
+    app.post("/isadmin", async (req, res) => {
+      const data = req.body;
+      const querry = { _id: ObjectId(data._id) };
 
-    })
-    app.post('/isadmin',async(req,res)=>{
-          const data = req.body;
-          const querry = { _id: ObjectId(data._id) };
-          
-          const result = await usercollection.findOne(querry);
-          if(result && result.role==='admin'){
-            res.send(result);
-          }else{
-            res.status(404).send({ message: "User Information not founded" });
-          }
-
-    })
+      const result = await usercollection.findOne(querry);
+      if (result && result.role === "admin") {
+        res.send(result);
+      } else {
+        res.status(404).send({ message: "User Information not founded" });
+      }
+    });
     // products
     // Product add or Update
     app.post("/addproduct", async (req, res) => {
       const data = req.body;
       const querry = { _id: ObjectId(data._id) };
       const option = { upsert: true };
-     
+
       const insertdata = {
         name: data.productName,
         price: parseInt(data.productPrice),
@@ -120,7 +119,11 @@ async function run() {
         $set: insertdata,
       };
       console.log(insertdata);
-      const result = await myProductcollection.updateOne(querry,updateDoc,option);
+      const result = await myProductcollection.updateOne(
+        querry,
+        updateDoc,
+        option
+      );
       res.send(result);
     });
     //Get product
@@ -165,49 +168,63 @@ async function run() {
       const paymentIntent = await stripe.paymentIntents.create({
         amount: price,
         currency: "usd",
-        payment_method_types: [
-          "card"
-        ],
+        payment_method_types: ["card"],
       });
       res.send({
         clientSecret: paymentIntent.client_secret,
-      })
-
+      });
     });
     // Order manage section
-    app.post('/order',async(req,res)=>{
-       const data = {...req.body,payment:false};
-       const result = await ordercollection.insertOne(data);
-       //We have to reduce Prduct Quantity;
-       res.send(result);
-    })
-    app.post('/payment',async(req,res)=>{
-       const data = req.body;
-       const querry = {_id: ObjectId(data._id)}
-       const updateDoc = {
-        $set: {payment:true},
-      };
-      const result = await ordercollection.updateOne(querry,updateDoc);
+    app.post("/order", async (req, res) => {
+      const data = { ...req.body, payment: false };
+      const result = await ordercollection.insertOne(data);
+      //We have to reduce Prduct Quantity;
       res.send(result);
-    
-
-    })
-    app.get('/orders',async(req,res)=>{
-       let querry = {};
-       const id = req.query.id;
-       if(id) querry = { userid: id };
-       const result = await ordercollection.find(querry).toArray();
-       res.send(result);
-    })
-    app.post('/delorder',async(req,res)=>{
+    });
+    app.post("/payment", async (req, res) => {
       const data = req.body;
-      console.log(data)
-      const querry = {_id:ObjectId(data._id)}
-      const result = await ordercollection.deleteOne(querry);
-      
+      const querry = { _id: ObjectId(data._id) };
+      const updateDoc = {
+        $set: { payment: true },
+      };
+      const result = await ordercollection.updateOne(querry, updateDoc);
       res.send(result);
+    });
+    app.get("/orders", async (req, res) => {
+      let querry = {};
+      const id = req.query.id;
+      if (id) querry = { userid: id };
+      const result = await ordercollection.find(querry).toArray();
+      res.send(result);
+    });
+    app.post("/delorder", async (req, res) => {
+      const data = req.body;
+      console.log(data);
+      const querry = { _id: ObjectId(data._id) };
+      const result = await ordercollection.deleteOne(querry);
 
-    })
+      res.send(result);
+    });
+    //Handel Reviews
+    app.post("/postreviews", async (req, res) => {
+      const data = req.body;
+      const result = await reviwscollection.insertOne(data);
+      res.send(result);
+    });
+    app.get("/reviews", async (req, res) => {
+      const paymentId = req.query.paymentId;
+      let querry = {};
+      if (paymentId) {
+        querry = { paymentid:paymentId};
+        const Singleresult = await reviwscollection.findOne(querry);
+        res.send(Singleresult);
+      } else {
+        querry={};
+        const result = await reviwscollection.find(querry).toArray();
+        console.log(result);
+        res.send(result);
+      }
+    });
   } finally {
   }
 }
