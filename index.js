@@ -109,12 +109,15 @@ async function run() {
       const option = { upsert: true };
 
       const insertdata = {
-        name: data.productName,
-        price: parseInt(data.productPrice),
-        quan: parseInt(data.productQuantity),
-        img: data.productImg,
-        desc: data.productDesc,
+        catagory: data.catagory,
+        description: data.description,
+        img: data.img,
+        introduction: data.introduction,
+        price: data.price,
+        quan: data.quan,
+        tittle: data.tittle,
       };
+      console.log(insertdata);
       const updateDoc = {
         $set: insertdata,
       };
@@ -215,11 +218,11 @@ async function run() {
       const paymentId = req.query.paymentId;
       let querry = {};
       if (paymentId) {
-        querry = { paymentid:paymentId};
+        querry = { paymentid: paymentId };
         const Singleresult = await reviwscollection.findOne(querry);
         res.send(Singleresult);
       } else {
-        querry={};
+        querry = {};
         const result = await reviwscollection.find(querry).toArray();
         console.log(result);
         res.send(result);
