@@ -3,6 +3,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 5000;
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
+const { is } = require("express/lib/request");
 require("dotenv").config();
 const app = express();
 const stripe = require("stripe")(process.env.PK);
@@ -15,6 +16,21 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  console.log(authHeader);
+  if (!authHeader) {
+    return res.status(401).send({ message: 'UnAuthorized access' });
+  }
+  const token = authHeader;
+  jwt.verify(token, process.env.PK, function (err, decoded) {
+    if (err) {
+      return res.status(403).send({ message: 'Forbidden access' })
+    }
+    req.decoded = decoded;
+    next();
+  });
+}
 
 async function run() {
   try {
@@ -23,9 +39,11 @@ async function run() {
     const usercollection = client.db("menufeture").collection("users");
     const ordercollection = client.db("menufeture").collection("orders");
     const reviwscollection = client.db("menufeture").collection("reviews");
+    //Verify Admin
+    
     app.get("/", (req, res) => {
       res.send("Server is working");
-      const querry = { email: data.email };
+      
     });
     // User
     app.get("/users", async (req, res) => {
@@ -54,7 +72,8 @@ async function run() {
       const data = req.body;
       const querry = { email: data.email };
       const result = await usercollection.findOne(querry);
-      res.send(result);
+      const responseData = jwt.sign({email:result.email,role:result.role}, process.env.PK)
+      res.send({token:responseData,id:result._id});
     });
     app.post("/user", async (req, res) => {
       const data = { ...req.body, role: "user" };
@@ -95,15 +114,12 @@ async function run() {
       const querry = { _id: ObjectId(data._id) };
 
       const result = await usercollection.findOne(querry);
-      if (result && result.role === "admin") {
-        res.send(result);
-      } else {
-        res.status(404).send({ message: "User Information not founded" });
-      }
+      const isadmin = result.role==="admin";
+      res.send({result:isadmin});
     });
     // products
     // Product add or Update
-    app.post("/addproduct", async (req, res) => {
+    app.post("/addproduct",verifyJWT, async (req, res) => {
       const data = req.body;
       const querry = { _id: ObjectId(data._id) };
       const option = { upsert: true };
