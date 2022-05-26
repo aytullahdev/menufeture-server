@@ -216,12 +216,18 @@ async function run() {
     });
     app.get("/reviews", async (req, res) => {
       const paymentId = req.query.paymentId;
+      const productId = req.query.productId;
       let querry = {};
       if (paymentId) {
         querry = { paymentid: paymentId };
         const Singleresult = await reviwscollection.findOne(querry);
         res.send(Singleresult);
-      } else {
+      } else if(productId){
+        querry = { paymentid: productId };
+        const productresult = await reviwscollection.find(querry);
+        res.send(productresult);
+      
+      }else {
         querry = {};
         const result = await reviwscollection.find(querry).toArray();
         console.log(result);
