@@ -109,7 +109,7 @@ async function run() {
       const result = await usercollection.updateOne(querry, updateDoc);
       res.send(result);
     });
-    app.post("/isadmin", async (req, res) => {
+    app.post("/isadmin",verifyJWT, async (req, res) => {
       const data = req.body;
       const querry = { _id: ObjectId(data._id) };
 
