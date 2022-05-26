@@ -1,6 +1,6 @@
-# DOBYBOX API
+# Menufeture API
     link :- https://menufeture.herokuapp.com
-# DOBYBOX Live site
+# Menufeture Live site
     hhttps://menufecture-a33d3.web.app/
 ## Functionality and End points;
     1) /products -> return all the products
