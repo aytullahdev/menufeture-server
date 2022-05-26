@@ -195,10 +195,19 @@ async function run() {
     });
     // Order manage section
     app.post("/order", async (req, res) => {
-      const data = { ...req.body, payment: false };
+      const data = { ...req.body, payment: false,pending:true };
       const result = await ordercollection.insertOne(data);
       //We have to reduce Prduct Quantity;
       res.send(result);
+      const pquerry = {_id: ObjectId(data.productid)}
+      const pres = await myProductcollection.findOne(pquerry);
+      const quan = (pres.quan - parseInt(data.quan));
+      
+      const pudpate={
+        $set: {quan:quan}
+      }
+      const mainres = await myProductcollection.updateOne(pquerry,pudpate);
+      console.log(quan);
     });
     app.post("/payment", async (req, res) => {
       const data = req.body;
@@ -250,6 +259,27 @@ async function run() {
         res.send(result);
       }
     });
+    //Accept order
+    app.post("/acceptorder",async(req,res)=>{
+      const data = req.body;
+      const querry = {_id:ObjectId(data._id)};
+      const updateDoc = {
+        $set: { pending: false },
+      };
+      const result = await ordercollection.updateOne(querry, updateDoc);
+     
+      
+      const pquerry = {_id: ObjectId(data.productid)}
+      const pres = await myProductcollection.findOne(pquerry);
+      const quan = (pres.quan - parseInt(data.quan));
+      
+      const pudpate={
+        $set: {quan:quan}
+      }
+      const mainres = await myProductcollection.updateOne(pquerry,pudpate);
+      res.send(mainres);
+         
+    })
   } finally {
   }
 }
